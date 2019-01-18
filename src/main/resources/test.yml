@@ -1,0 +1,48 @@
+# This is a full test
+# for the new library!
+test:
+  # we have 9 types natively supported
+  types:
+    # bool
+    bool: true
+    # byte
+    byte: -1
+    # short
+    short: 3200
+    # int
+    int: -2100000000
+    # long
+    long: 1234321425321
+    # float
+    float: 3.1415926
+    # double
+    double: 123413.4567654567654
+    # char
+    char: c
+    # string
+    string: this is a string
+    # datetime
+    datetime: 1997-01-06 23:12:10
+  # multiple line text is joined by space (" ")
+  text:
+    line 1
+    line 2
+    line 3
+  # long text is a literal string
+  # which across multiple lines
+  longtext: |
+    double function(double x) {
+      // do somthing
+    }
+  # list is a mixed typed vector
+  list:
+    - ScalarValue
+    - key: val
+    - - ListOfList
+  # and let's make it deep
+  dep1:
+    -
+      dep2:
+        -
+          the treasure
+  # finally, this is an orphan comment

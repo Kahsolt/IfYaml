@@ -1,0 +1,34 @@
+<HashNode children={"test":
+  <HashNode children={"longtext":
+    <ScalarNode value='double funct...'>, "types":
+    <HashNode children={"datetime":
+      <ScalarNode value='1997-01-06 2...'>, "bool":
+      <ScalarNode value='true'>, "string":
+      <ScalarNode value='this is a st...'>, "byte":
+      <ScalarNode value='-1'>, "double":
+      <ScalarNode value='123413.45676...'>, "char":
+      <ScalarNode value='c'>, "short":
+      <ScalarNode value='3200'>, "float":
+      <ScalarNode value='3.1415926'>, "int":
+      <ScalarNode value='-2100000000'>, "long":
+      <ScalarNode value='123432142532...'>
+    } comments=[' bool']>, "text":
+    <ScalarNode value='line 1 line ...'>, "list":
+    <ListNode items=[
+      <ScalarNode value='ScalarValue'>,
+      <HashNode children={"key":
+        <ScalarNode value='val'>
+      }>,
+      <ListNode items=[
+        <ScalarNode value='ListOfList'>
+      ]>
+    ]>, "dep1":
+    <ListNode items=[
+      <HashNode children={"dep2":
+        <ListNode items=[
+          <ScalarNode value='the treasure'>
+        ]>
+      }>
+    ]>
+  } comments=[' we have 9 t...']>
+} comments=[' This is a f...', ' for the new...']>

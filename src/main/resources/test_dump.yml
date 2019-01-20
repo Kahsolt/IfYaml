@@ -1,10 +1,9 @@
 # This is a full test for the new library!
 # let's start form null value :)
-test:
-
+test: 
 # we have 10 types natively supported
 # string/multiline/text are take as string
-types:
+types: 
   # bool
   bool: true
   # byte
@@ -24,53 +23,44 @@ types:
   # string
   string: this is a string
   # multiline string is one string joined by space (" ")
-  multiline:
+  multiline: 
     # value is also commentable 1
-    line 1
-    line 2
     # value is also commentable 2 (will move up)
-    line 3
     # value is also commentable 3 (will move up)
+    line 1 line 2 line 3 
   # text string is one kept literal originally (but cannot comment the value)
-  text: |
+  text: | 
     double function(double x) {
      // do somthing
     }
   # datetime
   datetime: 1997-01-06 23:12:10
-
 # list is a hetergeneous vector structure
-list:
+list: 
   # item is text
   - Text
   # item is hash
   - key: val
   # item is list
   - - ListOfList
-
 # hash is a named-tuple structure
-hash:
+hash: 
   # value is text
-  name1:
-    Text
+  name1: Text
   # value is hash
-  name2:
+  name2: 
     key: val
   # value is list
-  name3:
+  name3: 
     - HashOfList
-
 # let's make these structures deep :)
 # <hs>
-hash1:
+hash1: 
   # <hs.ls>
-  -
+  - 
     # <hs.ls.hs>
-    hash2:
+    hash2: 
       # <hs.ls.hs.ls>
-      -
+      - 
         # <hs.ls.hs.ls.Text>
-        the treasure
-        is deep
-
-# finally, this is an orphan comment (will be removed)
+        the treasure is deep 

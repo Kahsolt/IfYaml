@@ -1,8 +1,10 @@
 package parse;
 
-public class SyntaxErrorException extends Exception {
+public class SyntaxErrorException extends RuntimeException {
 
     public SyntaxErrorException() { super(); }
-    public SyntaxErrorException(int lineno, int offset, String line) { super(String.format("Syntax error: (%d:%d) '%s'", lineno, offset, line)); }
+    public SyntaxErrorException(String message) { super(message); }
+    public SyntaxErrorException(Throwable cause) { super(cause); }
+    public SyntaxErrorException(String message, Throwable cause) { super(message, cause); }
 
 }

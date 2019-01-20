@@ -10,6 +10,8 @@
 
 package parse;
 
+import util.StringEx;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -48,35 +50,31 @@ public class ExLexer extends Lexer {
                     else break;
                 }
                 next_token = token;   // stash key token
-                token_buff.addLast(new Token(TokenType.VALUE, indent, String.join(" ", values)));
+                token_buff.addLast(values.size() == 1
+                        ? new Token(TokenType.VALUE_LINE, indent, values.get(0))
+                        : new Token(TokenType.VALUE_MULTILINE, indent, String.join(" ", values)));
                 return nextToken();
-            case BOND:
+            case S_BOND:
                 ArrayList<Token> value_tokens = new ArrayList<>();
                 token = super.nextToken();
                 indent = token.indent;
-                if (token.isComment() || token.isValue()) {
+                if (indent > prev_token.indent) {
                     value_tokens.add(token);
                     while ((token = super.nextToken()) != null) {
                         if (token.indent <= prev_token.indent) break;
                         value_tokens.add(token);
                     }
+                    next_token = token; // stash key token
                     StringBuilder sb = new StringBuilder(100);
                     for (Token valtok : value_tokens) {
-                        sb.append(valtok.indent <= indent ? ""
-                                : String.format("%" + (valtok.indent - indent) + "d", 0)
-                                    .replace("0", " "));
+                        sb.append(StringEx.repeat(" ", valtok.indent - indent));
                         if (valtok.isComment()) sb.append('#');
                         sb.append(valtok.value);
                         sb.append('\n');
                     }
-                    return new Token(TokenType.VALUE, indent, sb.toString());
-                } else {
-                    try { throw new SyntaxErrorException(); }
-                    catch (SyntaxErrorException e) { e.printStackTrace(); }
-                    next_token = token;
-                    // let's fucking skip it
-                    return nextToken();
-                }
+                    sb.deleteCharAt(sb.length() - 1);   // remove redundant '\n'
+                    return new Token(TokenType.VALUE_TEXT, indent, sb.toString());
+                } else new Token(TokenType.VALUE_LINE, indent);
             default:    // pass through when KEY/ITEM/COMMENT
                 if (token.isKey() || token.isItem()) prev_token = token;
                 return token;

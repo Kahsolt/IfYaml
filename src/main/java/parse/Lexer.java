@@ -49,9 +49,9 @@ public class Lexer {
             return new Token(TokenType.ITEM, indent);
         }
         // 2. bond
-        else if (isPipe()) {
-            indent = index; read();         // offset of '|'
-            return new Token(TokenType.BOND, indent);
+        else if (isPipe() || isRAngle()) {
+            indent = index; read();         // offset of '|' or '>'
+            return new Token(TokenType.S_BOND, indent);
         }
         // 3.key / value
         else if (isText()) {
@@ -65,11 +65,7 @@ public class Lexer {
         }
 
         // -1. bad token
-        try { throw new SyntaxErrorException(lineno, index, new String(line)); }
-        catch (SyntaxErrorException e) { e.printStackTrace(); }
-        // let's fucking skip it
-        read();
-        return nextToken();
+        throw new SyntaxErrorException(String.format("Syntax error: (%d:%d) '%s'", lineno, index, line));
     }
     private String extractText() {
         buf.delete(0, buf.length());    // clear
@@ -149,6 +145,7 @@ public class Lexer {
     private boolean isBlank   () { return cur() == ' '; }
     private boolean isHyphen  () { return cur() == '-'; }
     private boolean isColon   () { return cur() == ':'; }
+    private boolean isRAngle  () { return cur() == '>'; }
     private boolean isPipe    () { return cur() == '|'; }
     private boolean isHash    () { return cur() == '#'; }
     private boolean isSQuote  () { return cur() == '\''; }

@@ -10,6 +10,8 @@
 
 package tree;
 
+import util.StringEx;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,9 +27,12 @@ public class Tree {
     public Tree(Node root) { this.root = root; }
     public Tree(Node root, Character separator) { this(root); this.separator = separator; }
 
+    public void setSeparator(Character separator) { this.separator = separator; }
+    public Node toNode() { return root; }
+
     // High level API
     public boolean exist(String path) { return getNode(path) != null; }
-    private String _get(String path) { Node node = getNode(path); return node instanceof ScalarNode ? ((ScalarNode) node).getValue() : null; }
+    private String _get(String path) { Node node = getNode(path); return node instanceof TextNode ? ((TextNode) node).getValue() : null; }
     public Boolean getBoolean(String path) { String value = _get(path); if (value == null) return null; try {return Boolean.valueOf(value); } catch (NullPointerException ignore) { return null; } }
     public Boolean getBoolean(String path, Boolean defaultval) { return getBoolean(path) != null ? getBoolean(path) : defaultval; }
     public Byte getByte(String path) { String value = _get(path); if (value == null) return null; try { return Byte.valueOf(value); } catch (NumberFormatException | NullPointerException ignore) { return null; } }
@@ -49,13 +54,13 @@ public class Tree {
     public Date getDatetime(String path) { String value = _get(path); if (value == null) return null; try { return _default_fmt.parse(value); } catch (ParseException | NullPointerException ignore) { return null; } }
     public Date getDatetime(String path, Date defaultval) { return getDatetime(path) != null ? getDatetime(path): defaultval; }
     public Date getDatetime(String path, SimpleDateFormat fmt) { String value = _get(path); if (value == null) return null; try { return fmt.parse(value); } catch (ParseException | NullPointerException ignore) { return null; } }
-    public void set(String path, Object value) { set(path, value, true); }
-    public void set(String path, Object value, boolean restructurize) {
-        if (restructurize && value == null) { removeNode(path); return; }
+    public boolean set(String path, Object value) { return set(path, value, true); }
+    public boolean set(String path, Object value, boolean restructurize) {
+        if (restructurize) { if (value == null) return removeNode(path); makeNode(path); }
 
-        Node node = restructurize ? makeNode(path) : getNode(path);
-        if (!(node instanceof ScalarNode)) return;
-        ScalarNode scnode = (ScalarNode) node;
+        Node node = getNode(path);
+        if (!(node instanceof TextNode)) return false;
+        TextNode txnode = (TextNode) node;
 
         if (value instanceof String
                 || value instanceof Integer
@@ -65,20 +70,20 @@ public class Tree {
                 || value instanceof Float
                 || value instanceof Short
                 || value instanceof Character
-                || value instanceof Byte) scnode.setValue(String.valueOf(value));
-        else if (value instanceof Date) scnode.setValue(_default_fmt.format(value));
-        else scnode.setValue(value == null ? null : value.toString());
+                || value instanceof Byte) txnode.setValue(String.valueOf(value));
+        else if (value instanceof Date) txnode.setValue(_default_fmt.format(value));
+        else txnode.setValue(value == null ? null : value.toString());
+        return true;
     }
-    public void set(String path, Date value, SimpleDateFormat fmt) { set(path, fmt.format(value)); }
+    public boolean set(String path, Date value, SimpleDateFormat fmt) { return set(path, fmt.format(value)); }
 
     // Low level API
     public Node getNode(String path) { return path == null ? null : _getNode(root, path); }
     private Node _getNode(Node node, String path) {
         if (node == null || path.isEmpty()) return node;
 
-        int idx = path.indexOf(separator);
-        String sect_name = idx == -1 ? path : path.substring(0, idx);
-        String rest_path = idx == -1 ? ""   : path.substring(idx + 1);
+        String[] sr = StringEx.cut(path, separator);
+        String sect_name = sr[0], rest_path = sr[1];
 
         if (node instanceof HashNode)
             return _getNode(((HashNode) node).getChild(sect_name), rest_path);
@@ -88,69 +93,94 @@ public class Tree {
 
         return null;
     }
-    public Node makeNode(String path) { return path == null ? null : _makeNode(root, path); }
+    public void makeNode(String path) { if (path != null) _makeNode(root, path); }
     private Node _makeNode(Node node, String path) {
-        if (path.isEmpty()) return new ScalarNode(node);
+        if (root != null && node == null) return null;
 
-        int idx = path.indexOf(separator);
-        String sect_name = idx == -1 ? path : path.substring(0, idx);
-        String rest_path = idx == -1 ? ""   : path.substring(idx);
+        String sect_name, next_sect_name, rest_path;
+        String[] sr = StringEx.cut(path, separator);
+        sect_name = sr[0]; rest_path = sr[1];
+        sr = StringEx.cut(rest_path, separator);
+        next_sect_name = sr[0];
 
-        Node rtnode;
-        if (root == null && node == root) {
-            if (sect_name.isEmpty()) {
-                return root = _makeNode(root, rest_path);
-            } else {
-                HashNode hsnode = new HashNode();
-                root = hsnode;
-                rtnode = _makeNode(hsnode, rest_path);
-                hsnode.putChild(sect_name, rtnode);
-                return rtnode;
-            }
-        } else if (node instanceof HashNode) {
-            HashNode hsnode = (HashNode) node;
-            rtnode = _makeNode(hsnode.getChild(sect_name), rest_path);
-            hsnode.putChild(sect_name, rtnode);
-            return rtnode;
-        } else if (node instanceof ListNode) {
-            ListNode lsnode = (ListNode) node;
-            try {
+        if (root == null) {
+            if (path.isEmpty()) root = new TextNode(node);
+            else try {
                 int i = Integer.valueOf(sect_name);
-                rtnode = _makeNode(lsnode.getItem(i), rest_path);
-                lsnode.insertItem(i, rtnode);
-                return rtnode;
-            } catch (NumberFormatException ignore) { }
+                return root = _makeNode(root = new ListNode(node), path);
+            } catch (NumberFormatException ignore) {
+                return root = _makeNode(root = new HashNode(node), path);
+            }
         }
-
-        return null;
-    }
-    public void removeNode(String path) { if (path != null) _removeNode(root, path); }
-    private void _removeNode(Node node, String path) {
-        if (node == null || path.isEmpty()) return;
-
-        int idx = path.indexOf(separator);
-        String sect_name = idx == -1 ? path : path.substring(0, idx);
-        String rest_path = idx == -1 ? ""   : path.substring(idx + 1);
 
         if (node instanceof HashNode) {
             HashNode hsnode = (HashNode) node;
-            if (rest_path.isEmpty())
-                hsnode.removeChild(sect_name);
-            else
-                _removeNode(hsnode.getChild(sect_name), rest_path);
+            if (rest_path.isEmpty()) {
+                if (!hsnode.hasChild(sect_name))
+                    hsnode.putChild(sect_name, new TextNode(hsnode));
+            } else try {
+                int i = Integer.valueOf(next_sect_name);
+                if (!hsnode.hasChild(sect_name))
+                    hsnode.putChild(sect_name, _makeNode(new ListNode(node), rest_path));
+                else _makeNode(hsnode.getChild(sect_name), rest_path);
+            } catch (NumberFormatException ignore) {
+                if (!hsnode.hasChild(sect_name))
+                    hsnode.putChild(sect_name, _makeNode(new HashNode(node), rest_path));
+                else _makeNode(hsnode.getChild(sect_name), rest_path);
+            }
         } else if (node instanceof ListNode) {
             ListNode lsnode = (ListNode) node;
             try {
                 int i = Integer.valueOf(sect_name);
-                if (rest_path.isEmpty())
-                    lsnode.removeItem(i);
-                else
-                    _removeNode(lsnode.getItem(Integer.valueOf(sect_name)), rest_path);
+                if (rest_path.isEmpty()) {
+                    if (!lsnode.hasItem(i))
+                        lsnode.insertItem(i, new TextNode(lsnode));
+                } else try {
+                    i = Integer.valueOf(next_sect_name);
+                    if (!lsnode.hasItem(i))
+                        lsnode.insertItem(i, _makeNode(new ListNode(node), rest_path));
+                    else _makeNode(lsnode.getItem(i), rest_path);
+                } catch (NumberFormatException ignore) {
+                    if (!lsnode.hasItem(i))
+                        lsnode.insertItem(i, _makeNode(new HashNode(node), rest_path));
+                    else _makeNode(lsnode.getItem(i), rest_path);
+                }
             } catch (NumberFormatException ignore) { }
         }
+
+        return node;    // MUST return the trace node to construct tree recursively
+    }
+    public boolean removeNode(String path) { return path != null && _removeNode(root, path); }
+    private boolean _removeNode(Node node, String path) {
+        if (node == null) { if (node == root && path.isEmpty()) { root = null; return true; } return false; }
+
+        String[] sr = StringEx.cut(path, separator);
+        String sect_name = sr[0], rest_path = sr[1];
+
+        if (node instanceof HashNode) {
+            HashNode hsnode = (HashNode) node;
+            if (!rest_path.isEmpty())
+                _removeNode(hsnode.getChild(sect_name), rest_path);
+            else if (hsnode.hasChild(sect_name)) {
+                hsnode.removeChild(sect_name);
+                return true;
+            }
+        } else if (node instanceof ListNode) {
+            ListNode lsnode = (ListNode) node;
+            try {
+                int i = Integer.valueOf(sect_name);
+                if (!rest_path.isEmpty())
+                    _removeNode(lsnode.getItem(Integer.valueOf(sect_name)), rest_path);
+                else if (lsnode.hasItem(i)) {
+                    lsnode.removeItem(i);
+                    return true;
+                }
+            } catch (NumberFormatException ignore) { }
+        }
+        return false;
     }
 
     @Override
-    public String toString() { return String.valueOf(root); }
+    public String toString() { return root == null ? "" : root.toAst(); }
 
 }

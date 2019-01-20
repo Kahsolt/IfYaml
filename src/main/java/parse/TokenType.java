@@ -6,5 +6,12 @@ public enum TokenType {
     VALUE,      // literal/quoted string
     COMMENT,    // '#comment'
 
-    BOND,       // '|', special case indicator of VALUE
+    // for ExLexer after value merging
+    VALUE_LINE,
+    VALUE_MULTILINE,
+    VALUE_TEXT,
+
+    // auxiliar symbols
+    S_BOND,       // '|', modifier of VALUE, keep literal
+    S_LINE,       // '>', modifier of VALUE, keep ending '\n', FIXME: currently functions as '|'
 }

@@ -13,7 +13,9 @@ package parse;
 import tree.*;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 
 public class Parser {
@@ -23,79 +25,95 @@ public class Parser {
     public Parser(File file) { lexer = new ExLexer(file); }
     public Parser(String text) { lexer = new ExLexer(text); }
 
-    public Node parse() { return root == null ? root = parseNode(null) : root; }
+    public Node parse() { return root == null ? root = parseNode(null, -1) : root; }
 
-    private Node parseNode(Node parent) {
+    private Node parseNode(Node parent, int indent) {   // as inferior node
         if (token == null) { readtoken(); if (token == null) return null; }
 
+        if (token.indent <= indent) return new TextNode(parent);;
         switch (token.type) {
-            case COMMENT:
-                stashComments();
-                return parseNode(parent);
-            case ITEM:
-                return parseListNode(parent, token.indent);
-            case KEY:
-                return parseHashNode(parent, token.indent);
+            case COMMENT: stashComments(); return parseNode(parent, indent);
+            case ITEM: return parseListNode(parent, token.indent);
+            case KEY: return parseHashNode(parent, token.indent);
             case VALUE:
-                return parseScalarNode(parent, token.indent);
-            default:
-                return null;
+            case VALUE_LINE:
+            case VALUE_MULTILINE:
+            case VALUE_TEXT: return parseTextNode(parent, token.indent);
+            default: return null;
         }
     }
     private ListNode parseListNode(Node parent, int indent) {
         ListNode node = new ListNode(parent);
-        attachComments(node, indent);
 
+        int cnt = 0;
         while (token != null && token.indent == indent && token.isItem()) {
             readtoken();    // skip '- '
-            if (token != null) node.addItem(parseNode(node));
-            else node.addItem(null);
+            if (token != null) {
+                node.addComments(cnt, collectComments(indent));
+                node.addItem(parseNode(node, indent));
+            }
             stashComments();
+            cnt++;
         }
-
         return node;
     }
     private HashNode parseHashNode(Node parent, int indent) {
         HashNode node = new HashNode(parent);
-        attachComments(node, indent);
 
         while (token != null && token.indent == indent && token.isKey()) {
             String key = token.value; readtoken();    // skip 'id: '
-            node.putChild(key, parseNode(node));
+            if (token != null) {
+                node.addComments(key, collectComments(indent));
+                node.putChild(key, parseNode(node, indent));
+            }
             stashComments();
         }
-
         return node;
     }
-    private ScalarNode parseScalarNode(Node parent, int indent) {
-        ScalarNode node = new ScalarNode(parent);
-        attachComments(node, indent);
+    private TextNode parseTextNode(Node parent, int indent) {
+        TextNode node = new TextNode(parent);
 
-        node.setValue(token.value); readtoken();    // absorb value
-
+        node.addComments(collectComments(indent));
+        switch (token.type) {
+            case VALUE_LINE:
+                node.setType(TextType.LINE);
+                node.setValue(token.value);
+                readtoken(); break;
+            case VALUE_MULTILINE:
+                node.setType(TextType.MULTILINE);
+                node.setValue(token.value);
+                readtoken(); break;
+            case VALUE_TEXT:
+                node.setType(TextType.TEXT);
+                node.setValue(token.value);
+                readtoken(); break;
+            default:
+                node.setValue("");
+        }
         return node;
     }
-    private void attachComments(Node node, int indent) {
+    private List<String> collectComments(int indent) {
         ListIterator<Token> iter = comments.listIterator(comments.size());
         while (iter.hasPrevious()) {
             Token cmttok = iter.previous();
             if (cmttok.indent != indent) break;
         }
+        List<String> res = new ArrayList<>();
         while (iter.hasNext()) {
             Token cmttok = iter.next();
-            if (cmttok.indent == indent)
-                node.addComment(cmttok.value);
-            else break;
+            res.add(cmttok.value);
         }
+
         comments.forEach(cmttok -> orphan_comments.add(cmttok.value));
         comments.clear();
+        return res;
     }
-    private void stashComments() { while (token != null && token.isComment()) { comments.addLast(token); readtoken(); } }
+    private void stashComments() { while (token != null && token.isComment()) { comments.add(token); readtoken(); } }
 
     private Node root = null;   // root tree node
     private Token token = null; // current token
-    private LinkedList<Token> comments = new LinkedList<>();            // affinity comments buf
-    private LinkedList<String> orphan_comments = new LinkedList<>();    // orphan comments buf
+    private List<Token> comments = new LinkedList<>();          // affinity comments buf
+    private List<String> orphan_comments = new ArrayList<>();   // orphan comments buf
     private void readtoken() { token = lexer.nextToken(); }
 
 }

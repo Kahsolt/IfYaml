@@ -15,55 +15,48 @@ import util.StringEx;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
-public class ExLexer extends Lexer {
+public class ExLexer {  // NOT inherit from Lexer
 
-    public ExLexer() { super(); }
-    public ExLexer(String text) { super(text); }
-    public ExLexer(File file) { super(file); }
+    private Lexer lexer = null;
+
+    public ExLexer(String text) { lexer = new Lexer(text); }
+    public ExLexer(File file) { lexer = new Lexer(file); }
 
     // reformed token buffer, typically several comment and one value token
     private LinkedList<Token> token_buff = new LinkedList<>();
     private Token prev_token = null;    // buffer last key/item token, for indent inference
     private Token next_token = null;    // buffer next token, 'cos don't have unreadToken()
 
-    @Override
     public Token nextToken() {
         if (!token_buff.isEmpty()) return token_buff.pollFirst();
         Token token;
         if (next_token != null) { token = next_token; next_token = null; }
-        else token = super.nextToken();
+        else token = lexer.nextToken();
         if (token == null) return null;
 
         switch (token.type) {
             case VALUE:
                 ArrayList<String> values = new ArrayList<>();
                 int indent = token.indent;
-                values.add(token.value);
-                while ((token = super.nextToken()) != null) {
-                    if (token.indent <= prev_token.indent) break;
-
-                    if (token.isComment())      // comments are ok
-                        token_buff.addLast(token);
-                    else if (token.isValue())   // values need merge
-                        values.add(token.value);
+                do {
+                    if (token.isComment()) token_buff.addLast(token);   // comments are ok
+                    else if (token.isValue()) values.add(token.value);  // values need merge
                     else break;
-                }
+                } while ((token = lexer.nextToken()) != null && token.indent > prev_token.indent);
                 next_token = token;   // stash key token
                 token_buff.addLast(values.size() == 1
                         ? new Token(TokenType.VALUE_LINE, indent, values.get(0))
                         : new Token(TokenType.VALUE_MULTILINE, indent, String.join(" ", values)));
-                return nextToken();
+                return nextToken(); // comment tokens have priority..
             case S_BOND:
                 ArrayList<Token> value_tokens = new ArrayList<>();
-                token = super.nextToken();
+                token = lexer.nextToken();
                 indent = token.indent;
                 if (indent > prev_token.indent) {
-                    value_tokens.add(token);
-                    while ((token = super.nextToken()) != null) {
-                        if (token.indent <= prev_token.indent) break;
-                        value_tokens.add(token);
-                    }
+                    do { value_tokens.add(token); }
+                    while ((token = lexer.nextToken()) != null && token.indent > prev_token.indent);
                     next_token = token; // stash key token
                     StringBuilder sb = new StringBuilder(100);
                     for (Token valtok : value_tokens) {
@@ -79,6 +72,13 @@ public class ExLexer extends Lexer {
                 if (token.isKey() || token.isItem()) prev_token = token;
                 return token;
         }
+    }
+    public List<Token> tokenize() {
+        ArrayList<Token> tokens = new ArrayList<>(80);
+        Token token;
+        while ((token = nextToken()) != null)
+            tokens.add(token);
+        return tokens;
     }
 
 }

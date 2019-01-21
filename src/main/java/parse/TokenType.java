@@ -1,6 +1,7 @@
 package parse;
 
 public enum TokenType {
+    // for Lexer
     ITEM,       // '- '
     KEY,        // 'id: '
     VALUE,      // literal/quoted string

@@ -11,12 +11,13 @@
 package parse;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Lexer {
 
     private BufferedReader buffer;
 
-    public Lexer() { buffer = new BufferedReader(new StringReader("")); }
     public Lexer(String text) { buffer = new BufferedReader(new StringReader(text)); }
     public Lexer(File file) { this(_readFile(file)); }
     private static String _readFile(File file) {
@@ -36,6 +37,7 @@ public class Lexer {
 
         // redundant blanks
         if (isBlank()) skipBlanks();
+        if (isEOL()) return nextToken();    // empty line...
         // 0.full-line comment
         if (isHash()) {
             indent = index; read();         // offset of '#'
@@ -92,15 +94,17 @@ public class Lexer {
             }
             read(); // skip '"'
         } else {
-            while (!isEOF() && !isEOL() && !(isColon() && hasRightGap()) && !(isHash() && hasLeftGap())) {
-                buf.append(cur());
-                read();
-            }
+            while (!isEOF() && !isEOL()  && !(isColon() && hasRightGap()) && !(isHash() && hasLeftGap()))
+            { buf.append(cur()); read(); }
         }
-        if (isEOL()) readline();
-
-        String text = buf.toString().trim();
-        return text.isEmpty() ? null: text;
+        return buf.toString().trim();
+    }
+    public List<Token> tokenize() {
+        ArrayList<Token> tokens = new ArrayList<>(80);
+        Token token;
+        while ((token = nextToken()) != null)
+            tokens.add(token);
+        return tokens;
     }
 
     private char[] line;    // current processing text line

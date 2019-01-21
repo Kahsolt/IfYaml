@@ -28,17 +28,16 @@ public class TextNode extends Node {
     public void clearValue() { value = ""; }
 
     @Override
-    public String toString() { return String.format("<TextNode value='%s' %s>", value, super.toString()); }
-    public String toAst() {
+    public String toString() {
         StringBuilder sb = new StringBuilder(100);
         sb.append(_toStringOfIndents());
         sb.append("<TextNode value=");
         if (value != null) sb.append(new StringEx(value).excerpt().escape().quote(true));
-        sb.append(_toAstOfComments());
+        sb.append(_toStringOfComments());
         sb.append('>');
         return sb.toString();
     }
-    private String _toAstOfComments() {
+    private String _toStringOfComments() {
         StringBuilder sb = new StringBuilder(100);
         if (comments != null && !comments.isEmpty()) {
             sb.append('\n');

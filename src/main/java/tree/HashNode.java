@@ -35,8 +35,7 @@ public class HashNode extends Node {
     public void clearChildren() { children.clear(); }
 
     @Override
-    public String toString() { return String.format("<HashNode children(%d) %s>", children.size(), super.toString()); }
-    public String toAst() {
+    public String toString() {
         StringBuilder sb = new StringBuilder(500);
         sb.append(_toStringOfIndents());
         sb.append("<HashNode children=");
@@ -48,9 +47,9 @@ public class HashNode extends Node {
                 sb.append('"');
                 sb.append(kv.getKey());
                 sb.append("\": ");
-                sb.append(_toAstOfComments(kv.getKey()));
+                sb.append(_toStringOfComments(kv.getKey()));
                 sb.append('\n');
-                sb.append(kv.getValue().toAst());
+                sb.append(kv.getValue());
                 isFirst = false;
             }
             sb.append('\n');
@@ -60,7 +59,7 @@ public class HashNode extends Node {
         sb.append(">");
         return sb.toString();
     }
-    private String _toAstOfComments(String name) {
+    private String _toStringOfComments(String name) {
         StringBuilder sb = new StringBuilder(100);
         if (comments.get(name) != null && !comments.get(name).isEmpty()) {
             sb.append("comments=");

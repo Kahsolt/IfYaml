@@ -20,7 +20,7 @@ import java.util.ListIterator;
 
 public class Parser {
 
-    private Lexer lexer;
+    private ExLexer lexer;
 
     public Parser(File file) { lexer = new ExLexer(file); }
     public Parser(String text) { lexer = new ExLexer(text); }

@@ -1,0 +1,17 @@
+      # comment1
+  what the : ffff.....fuck ??    # endline comment
+  kio la   : # ferma kommento
+    ffff.....fek ??
+  quod     : # nova?
+
+# comment2
+  404 not :
+    - noooo      # recognized as list
+    fouuuuund.   # discard!
+  dup: hi
+  dup: hey       # overwritten!
+
+# these all discarded
+    - no
+  not: here
+you can not read this

@@ -17,7 +17,8 @@ public class ListNode extends Node {
     public List<Map.Entry<Node, List<String>>> getItemCommentPairs() {
         List<Map.Entry<Node, List<String>>> pairs = new ArrayList<>();
         for (int i = 0; i < items.size(); i++)
-            pairs.add(new HashMap.SimpleEntry<>(items.get(i), comments.get(i)));
+            pairs.add(new HashMap.SimpleEntry<>(items.get(i),
+                    comments.size() > i ? comments.get(i) : Collections.EMPTY_LIST));
         return pairs;
     }
     public void addComments(int index, Collection<String> comments) {
@@ -33,8 +34,7 @@ public class ListNode extends Node {
     public void clearItems() { items.clear(); comments.clear(); }
 
     @Override
-    public String toString() { return String.format("<ListNode items(%d) %s>", items.size(), super.toString()); }
-    public String toAst() {
+    public String toString() {
         StringBuilder sb = new StringBuilder(300);
         sb.append(_toStringOfIndents());
         sb.append("<ListNode items=");
@@ -43,9 +43,9 @@ public class ListNode extends Node {
             for (int i = 0; i < items.size(); i++) {
                 if (i > 0) sb.append(", ");
                 sb.append(String.format("%d: ", i));
-                sb.append(_toAstOfComments(i));
+                sb.append(_toStringOfComments(i));
                 sb.append('\n');
-                sb.append(items.get(i).toAst());
+                sb.append(items.get(i));
             }
             sb.append('\n');
             sb.append(_toStringOfIndents());
@@ -54,9 +54,9 @@ public class ListNode extends Node {
         sb.append(">");
         return sb.toString();
     }
-    private String _toAstOfComments(int index) {
+    private String _toStringOfComments(int index) {
         StringBuilder sb = new StringBuilder(100);
-        if (comments.get(index) != null && !comments.get(index).isEmpty()) {
+        if (comments.size() > index && comments.get(index) != null && !comments.get(index).isEmpty()) {
             sb.append("comments=");
             StringBuilder _sb = new StringBuilder(40);
             for (String comment : comments.get(index)) { _sb.append(comment); _sb.append(' '); }

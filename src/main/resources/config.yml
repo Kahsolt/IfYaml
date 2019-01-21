@@ -1,0 +1,23 @@
+#输入/ot shop会打开的商店
+主商店: example
+#自动保存任务的间隔，单位是秒，太短将会影响性能
+自动保存: 1800
+数据库:
+  #可填写MySQL或SQLite
+  类型: SQLite
+  #连接池设置，最大连接数越多，则可同时处理更多的MySQL的数据
+  #SQLite模式下请勿超过10
+  连接池:
+    最小连接数: 5
+    最大连接数: 10
+  #如果是MySQL则填写MySQL的地址，必须带端口，遵从格式：IP:端口号，例如"127.0.0.1:3306"
+  #如果是SQLite则填写db文件名，例如"shujvku.db"
+  地址: 'new.db'
+  #以下在SQLite模式下无效
+  MySQL:
+    数据库名: 'dbname'
+    用户名: 'root'
+    密码: 'password'
+    表名: 'timedata'
+    用户名字段名: 'id'
+    时间字段名: 'time'

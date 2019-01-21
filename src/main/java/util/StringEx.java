@@ -42,6 +42,28 @@ public class StringEx {
         String rest = idx == -1 ? ""     : string.substring(idx + 1);
         return new String[] { seg, rest };
     }
+    public static String dequote(String string) {
+        if (string == null) return "";
+        if (string.startsWith("'") && string.endsWith("'")
+                ||string.startsWith("\"") && string.endsWith("\""))
+            return string.substring(1, string.length() - 1);
+        return string;
+    }
+    public static String deliteral(String string) {
+        if (string == null) return "";
+        if (!string.contains(" ")) return string;
+        boolean hasSQuote = string.contains("'"), hasDQuote = string.contains("\"");
+        return hasSQuote && hasDQuote || hasSQuote
+                ? String.format("\"%s\"", string.replace("\"", "\\\""))
+                : String.format("'%s'", string.replace("'", "\\'"));
+    }
+    public static String deliteral(String string, boolean singleQuote) {
+        return string == null ? ""
+                : !string.contains(" ") ? string
+                    : singleQuote
+                        ? String.format("'%s'", string.replace("'", "\\'"))
+                        : String.format("\"%s\"", string.replace("\"", "\\\""));
+    }
 
     private String string = "";
 
@@ -73,6 +95,52 @@ public class StringEx {
         return excerpt(150); // multi lines
     }
     public StringEx excerpt(int count) { return string.length() <= count ? this : StringEx.format("%s...", substring(0, count)); }
+    public StringEx prefix(String prefix) {
+        if (prefix == null || prefix.length() == 0) return this;
+
+        StringBuilder sb = new StringBuilder(200);
+        String[] lines = string.replace("\r", "").split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            sb.append(prefix);
+            sb.append(lines[i]);
+            if (i != lines.length - 1) sb.append('\n');
+        }
+        string = sb.toString();
+        return this;
+    }
+    public StringEx indent(int indent) {
+        if (indent == 0) return this;
+
+        String indent_prefix = StringEx.repeat(" ", indent > 0 ? indent : -indent);
+        StringBuilder sb = new StringBuilder(200);
+        if (indent > 0) prefix(indent_prefix);
+        else {
+            String[] lines = string.replace("\r", "").split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith(indent_prefix)) sb.append(lines[i].substring(-indent));
+                else sb.append(lines[i]);
+                if (i != lines.length - 1) sb.append('\n');
+            }
+            string = sb.toString();
+        }
+        return this;
+    }
+    public StringEx wrap() {
+        StringBuilder sb = new StringBuilder(200);
+        int len = 0;
+        String[] segs = string.split("[ \n\r\t]");
+        for (int i = 0; i < segs.length; i++) {
+            while (i < segs.length && len + segs[i].length() <= 64) {
+                sb.append(segs[i]); sb.append(' ');
+                len += segs[i].length(); i++;
+            }
+            sb.deleteCharAt(sb.length() - 1);   // remove redundant ' '
+            len = 0;
+            if (i != segs.length - 1) sb.append('\n');
+        }
+        string = sb.toString();
+        return this;
+    }
 
     // wrapper for native java.lang.String
     public static StringEx format(String format, Object... args) { return new StringEx(String.format(format, args)); }

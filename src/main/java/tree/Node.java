@@ -29,9 +29,6 @@ public abstract class Node {
     public int getDepth() { return depth; }
     public Tree toTree() { return new Tree(this); }
 
-    public abstract String toAst();
-    public String toString() { return String.format("parent=%s depth=%d", parent, depth); }
-
     protected String _toStringOfIndents() { return StringEx.repeat("  ", depth); }
     protected List<String> _initCommentSlot() { return new ArrayList<>(4); }
 

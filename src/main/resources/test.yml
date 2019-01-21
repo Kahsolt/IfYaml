@@ -1,6 +1,9 @@
-# This is a full test for the new library!
-# let's start form null value :)
+# here is a full test for the library!
+# let's start form empty string value :)
 test:
+
+# key contains space is ok
+the key: the value
 
 # we have 10 types natively supported
 # string/multiline/text are take as string
@@ -33,9 +36,10 @@ types:
     # value is also commentable 3 (will move up)
   # text string is one kept literal originally (but cannot comment the value)
   text: |
-    double function(double x) {
-     // do somthing
-    }
+    def func(x) do
+      # do something
+      print x = x * 2
+    end
   # datetime
   datetime: 1997-01-06 23:12:10
 

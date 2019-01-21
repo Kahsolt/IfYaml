@@ -32,7 +32,7 @@ public class Tree {
 
     // High level API
     public boolean exist(String path) { return getNode(path) != null; }
-    private String _get(String path) { Node node = getNode(path); return node instanceof TextNode ? ((TextNode) node).getValue() : null; }
+    private String _get(String path) { Node node = getNode(StringEx.dequote(path)); return node instanceof TextNode ? ((TextNode) node).getValue() : null; }
     public Boolean getBoolean(String path) { String value = _get(path); if (value == null) return null; try {return Boolean.valueOf(value); } catch (NullPointerException ignore) { return null; } }
     public Boolean getBoolean(String path, Boolean defaultval) { return getBoolean(path) != null ? getBoolean(path) : defaultval; }
     public Byte getByte(String path) { String value = _get(path); if (value == null) return null; try { return Byte.valueOf(value); } catch (NumberFormatException | NullPointerException ignore) { return null; } }
@@ -152,7 +152,7 @@ public class Tree {
     }
     public boolean removeNode(String path) { return path != null && _removeNode(root, path); }
     private boolean _removeNode(Node node, String path) {
-        if (node == null) { if (node == root && path.isEmpty()) { root = null; return true; } return false; }
+        if (node == root && path.isEmpty()) { root = null; return true; }
 
         String[] sr = StringEx.cut(path, separator);
         String sect_name = sr[0], rest_path = sr[1];
@@ -181,6 +181,6 @@ public class Tree {
     }
 
     @Override
-    public String toString() { return root == null ? "" : root.toAst(); }
+    public String toString() { return root == null ? "" : root.toString(); }
 
 }

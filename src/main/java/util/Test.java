@@ -20,10 +20,11 @@ public class Test {
     private int test_count = 0;
     private int error_count = 0;
     private int system_error_count = 0;
+    private long start_time = 0;
 
     public void register(Class clazz) { registered_classes.add(clazz); }
-    public void unregister(Class clazz) { registered_classes.remove(clazz); }
     public void register(Collection<Class> classes) { registered_classes.addAll(classes); }
+    public void unregister(Class clazz) { registered_classes.remove(clazz); }
 
     public void run() {
         reset();
@@ -31,46 +32,64 @@ public class Test {
             Object inst = null; try { inst = clazz.newInstance(); }
             catch (InstantiationException | IllegalAccessException  e) { e.printStackTrace(); continue; }
 
-            _invokeHookMethod(inst, "initialize");
+            _invokeHook(inst, "initialize");
             boolean testAll = clazz.getDeclaredAnnotation(TestCase.class) != null;
             for (Method method : clazz.getDeclaredMethods())
                 if ((testAll && method.getName().startsWith("test"))
                         || method.getDeclaredAnnotationsByType(TestCase.class).length != 0) {
-                    test_count++;
-                    method.setAccessible(true);
+                    long S, T, s, t;
                     try {
-                        _invokeHookMethod(inst, "setup");
+                        S = System.currentTimeMillis();
+                        _invokeHook(inst, "setup");
+                        method.setAccessible(true);
+                        s = System.currentTimeMillis();
                         method.invoke(inst);
-                        _invokeHookMethod(inst, "teardown");
-                    } catch (IllegalAccessException ignore) { }
+                        t = System.currentTimeMillis();
+                        _invokeHook(inst, "teardown");
+                        T = System.currentTimeMillis();
+                        test_count++;
+                        System.out.printf("\n>> Test of %s.%s() in %d/%d mills.\n",
+                                clazz.getSimpleName(), method.getName(), t - s, T - S);
+                    } catch (IllegalAccessException | SecurityException ignore) { }
                     catch (InvocationTargetException e) { e.printStackTrace(); error_count++; }
-                    printSectionSpliter();
+                    System.out.println(StringEx.repeat("=", 78));
                 }
-            _invokeHookMethod(inst, "destroy");
+            _invokeHook(inst, "destroy");
         }
         report();
     }
-    private void _invokeHookMethod(Object inst, String methodName) {
+    private void _invokeHook(Object inst, String methodName) {
+        if (inst == null) return;
         try {
             Method mthd = inst.getClass().getDeclaredMethod(methodName);
             mthd.setAccessible(true); mthd.invoke(inst);
         }  catch (NoSuchMethodException | IllegalAccessException ignore) { }
         catch (InvocationTargetException e) { system_error_count++; e.printStackTrace(); }
     }
-    private void reset() { test_count = error_count = system_error_count = 0; }
-    private void report() {
-        System.out.printf("Test of %d cases finished with %d passed and %d failed (%d system errors)\n",
-                test_count, test_count - error_count, error_count, system_error_count);
+    private void reset() {
+        test_count = error_count = system_error_count = 0;
+        start_time = System.currentTimeMillis();
     }
-
-    private void printSectionSpliter() {
-        System.out.println(String.format("%" + 5 + "d", 111111).replace("1", "==========="));
+    private void report() {
+        System.out.printf("\n>> Test of %d cases in %d mills.\n" +
+                        "\t- %d/%d passed \n" +
+                        "\t- %d/%d failed (%d system errors) \n",
+                test_count, System.currentTimeMillis() - start_time,
+                test_count - error_count, test_count,
+                error_count, test_count, system_error_count);
     }
 
     // hooks
-    protected void setup() { }
-    protected void teardown() { }
-    protected void initialize() { }
-    protected void destroy() { }
+<<<<<<< HEAD
+    protected void initialize() { /* invoked entering each class */ }
+    protected void setup()      { /* invoked before each method */ }
+    protected void teardown()   { /* invoked after each method */ }
+    protected void destroy()    { /* invoked exiting each class */ }
+=======
+    protected void initialize() { /* invoked before each class */ }
+    protected void setup()      { /* invoked before each method */ }
+    protected void teardown()   { /* invoked after each method */ }
+    protected void destroy()    { /* invoked after each class */ }
+>>>>>>> 4760708... gameover
 
 }
